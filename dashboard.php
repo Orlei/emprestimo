@@ -188,7 +188,8 @@ $tempo_restante_inicial = $_SESSION['tempo_limite_total'] - (time() - $_SESSION[
 
             <div class="col-lg-4">
                 <div class="side-notice-container">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-c
+                    enter mb-4">
                         <h4 class="fw-bold text-dark m-0">Mural de Avisos</h4>
                         <button class="btn btn-primary btn-sm px-3 fw-semibold" style="background-color: #0b2265; border: none;">
                             <i class="fa-solid fa-plus me-1"></i> Novo Aviso
