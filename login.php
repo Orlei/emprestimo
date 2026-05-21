@@ -94,6 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Empréstimos - UNIOESTE</title>
 
+    <link rel="icon" type="image/png" href="logo256_unioeste.png">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
@@ -130,8 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .logo-unioeste {
-            width: 140px;
-            margin-bottom: 40px;
+            width: 220px; /* Aumentado de 140px para 220px para dar mais presença */
+            display: block;
+            margin: 0 auto 35px auto; /* O '0 auto' garante a centralização horizontal perfeita */
         }
 
         .login-header-title {
@@ -139,12 +142,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 700;
             color: #0b2265;
             margin-bottom: 8px;
+            text-align: center;
         }
 
         .login-header-subtitle {
             color: #6b7280;
             font-size: 0.95rem;
             margin-bottom: 30px;
+            text-align: center;
         }
 
         /* Customização dos Inputs */
@@ -269,10 +274,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="login-form-area">
         
-        <img class="logo-unioeste" src="https://www.unioeste.br/portal/images/logo_unioeste.png" alt="Logo UNIOESTE">
+        <img class="logo-unioeste" src="logo_unioeste.png" alt="Logo UNIOESTE">
 
         <h2 class="login-header-title">Acesse o Painel</h2>
-        <p class="login-header-subtitle">Utilize suas credenciais institucionais para entrar.</p>
+        <p class="login-header-subtitle">Utilize suas credenciais institucionais para entrar</p>
 
         <?php if (!empty($erro)): ?>
             <div class="error-container shadow-sm">
