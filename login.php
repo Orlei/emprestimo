@@ -107,18 +107,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         body {
-            height: 100vh;
+            min-height: 100vh;
             background-color: #ffffff;
             font-family: 'Segoe UI', Roboto, sans-serif;
-            overflow: hidden;
+            /* CORREÇÃO: era overflow: hidden — bloqueava o scroll quando o teclado virtual abria em mobile */
+            overflow-x: hidden;
         }
 
         .login-container {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
         }
 
-        /* LADO ESQUERDO: Formulário de Login Sólido e Limpo */
+        /* LADO ESQUERDO: Formulário de Login */
         .login-form-area {
             width: 100%;
             max-width: 480px;
@@ -132,9 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .logo-unioeste {
-            width: 220px; /* Aumentado de 140px para 220px para dar mais presença */
+            width: 220px;
             display: block;
-            margin: 0 auto 35px auto; /* O '0 auto' garante a centralização horizontal perfeita */
+            margin: 0 auto 35px auto;
         }
 
         .login-header-title {
@@ -152,7 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-align: center;
         }
 
-        /* Customização dos Inputs */
         .input-group-text {
             background-color: #f9fafb;
             border-color: #d1d5db;
@@ -172,7 +172,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
         }
 
-        /* Botão de Login Estilo Unioeste */
         .btn-login {
             width: 100%;
             height: 48px;
@@ -187,9 +186,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .btn-login:hover {
             background-color: #1d4ed8;
+            color: #ffffff;
         }
 
-        /* Mensagens de Erro */
         .error-container {
             background-color: #fef2f2;
             border-left: 4px solid #ef4444;
@@ -205,14 +204,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .error-container i {
             font-size: 1.1rem;
             margin-right: 10px;
+            flex-shrink: 0;
         }
 
-        /* LADO DIREITO: Foto Institucional com melhor nitidez e posicionamento */
-        /* LADO DIREITO: Foto Institucional com Nitidez Corrigida */
+        /* LADO DIREITO: Foto Institucional */
         .login-sidebar {
             flex: 1;
             position: relative;
-            background-image: url('fundo-unioeste.png'); /* Nome do seu arquivo original */
+            background-image: url('fundo-unioeste.png');
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
@@ -224,7 +223,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             z-index: 1;
         }
 
-        /* Camada de contraste separada para não estragar a qualidade da foto */
         .login-sidebar::after {
             content: '';
             position: absolute;
@@ -234,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 rgba(11, 34, 101, 0.2) 0%, 
                 rgba(5, 15, 45, 0.65) 100%
             );
-            z-index: -1; /* Fica acima da foto, mas abaixo do texto */
+            z-index: -1;
         }
 
         .sidebar-brand-title {
@@ -256,14 +254,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             z-index: 2;
         }
 
-        /* Responsividade */
+        /* =============================================
+           RESPONSIVIDADE
+           ============================================= */
+
+        /* Tablet (até 991px): oculta a foto, formulário ocupa tela toda */
         @media (max-width: 991.98px) {
             .login-sidebar {
-                display: none; /* Em dispositivos móveis, mantém o foco puro no formulário */
+                display: none;
             }
             .login-form-area {
                 max-width: 100%;
-                padding: 40px 25px;
+                padding: 40px 30px;
+            }
+        }
+
+        /* Mobile médio (até 576px): reduz padding e logo */
+        @media (max-width: 576px) {
+            .login-form-area {
+                padding: 32px 20px;
+                justify-content: flex-start;
+                padding-top: 48px;
+            }
+            .logo-unioeste {
+                width: 160px;
+                margin-bottom: 24px;
+            }
+            .login-header-title {
+                font-size: 1.4rem;
+            }
+            .login-header-subtitle {
+                font-size: 0.875rem;
+                margin-bottom: 20px;
+            }
+        }
+
+        /* Mobile pequeno (até 380px): ajuste fino para telas de 320px */
+        @media (max-width: 380px) {
+            .login-form-area {
+                padding: 32px 16px;
+            }
+            .btn-login {
+                font-size: 0.9rem;
             }
         }
     </style>
