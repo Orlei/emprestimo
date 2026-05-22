@@ -39,9 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     // AÇÃO: Registrar Empréstimo
     if ($_POST['acao'] === 'registrar_emprestimo') {
         $id_item            = intval($_POST['id_item'] ?? 0);
-        $nome_responsavel   = trim($_POST['nome_responsavel'] ?? '');
-        $setor_responsavel  = trim($_POST['setor_responsavel'] ?? '');
+        $nome_responsavel   = trim($_POST['beneficiario_nome'] ?? ''); 
+        $setor_responsavel  = trim($_POST['beneficiario_setor'] ?? ''); 
 
+        // CRUCIAL: Se a sua tabela do banco ainda não tiver a coluna 'vinculo', ela grava o empréstimo normalmente.
         if ($id_item > 0 && !empty($nome_responsavel) && !empty($setor_responsavel)) {
             $stmt = $conn->prepare("INSERT INTO emprestimos (id_item, nome_responsavel, setor_responsavel) VALUES (?, ?, ?)");
             $stmt->bind_param("iss", $id_item, $nome_responsavel, $setor_responsavel);
@@ -56,7 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         $id_emprestimo = intval($_POST['id_emprestimo'] ?? 0);
 
         if ($id_emprestimo > 0) {
-            // Define a data_devolucao com o horário atual e muda o status para Devolvido
             $stmt = $conn->prepare("UPDATE emprestimos SET data_devolucao = NOW(), status = 'Devolvido' WHERE id = ?");
             $stmt->bind_param("i", $id_emprestimo);
             $stmt->execute();
@@ -67,10 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
 }
 
 // 4. Busca dados para renderizar
-// Busca itens para listar no select do Modal
 $itens_disponiveis = $conn->query("SELECT id, nome_item FROM itens ORDER BY nome_item ASC");
 
-// Busca o histórico de empréstimos trazendo o nome do equipamento correspondente via INNER JOIN
 $historico_emprestimos = $conn->query("
     SELECT e.*, i.nome_item 
     FROM emprestimos e 
@@ -186,17 +184,40 @@ $historico_emprestimos = $conn->query("
                                 <?php endwhile; ?>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Nome do Responsável</label>
-                            <input type="text" name="nome_responsavel" class="form-control" required placeholder="Ex: João Silva">
+                        
+                        <div class="mb-3 position-relative">
+                            <label class="form-label fw-bold"><i class="fa-solid fa-user me-1 text-muted"></i> Pesquisar Beneficiário</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                <input type="text" id="busca_beneficiario" class="form-control" placeholder="Digite o nome ou login institucional..." autocomplete="off">
+                            </div>
+                            <div id="sugestoes_beneficiario" class="list-group mt-1 shadow d-none" style="position: absolute; z-index: 1050; width: 100%; max-height: 250px; overflow-y: auto;"></div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Setor de Destino</label>
-                            <input type="text" name="setor_responsavel" class="form-control" required placeholder="Ex: Laboratório de Informática 3">
+
+                        <hr class="text-muted my-3">
+
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-muted">Nome Completo</label>
+                            <input type="text" name="beneficiario_nome" id="hidden_nome" class="form-control bg-light text-dark fw-semibold" readonly required placeholder="Aguardando seleção...">
                         </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small fw-bold text-muted">Vínculo Institucional</label>
+                                <input type="text" name="beneficiario_vinculo" id="hidden_vinculo" class="form-control bg-light text-dark fw-semibold" readonly placeholder="Não informado">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label small fw-bold text-muted">Setor / Lotação</label>
+                                <input type="text" name="beneficiario_setor" id="hidden_setor" class="form-control bg-light text-dark fw-semibold" readonly required placeholder="Não informado">
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="beneficiario_login" id="hidden_login">
+                        <input type="hidden" name="beneficiario_email" id="hidden_email">
+                        <input type="hidden" name="origem_cadastro" id="hidden_origem" value="local"> 
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal">Cancelar</button>
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary btn-sm" style="background-color: var(--unioeste-blue); border: none;">Confirmar Saída</button>
                     </div>
                 </form>
@@ -219,7 +240,7 @@ $historico_emprestimos = $conn->query("
                         <small class="text-muted d-block mt-2"><i class="fa-solid fa-clock me-1"></i>A data e hora atuais serão salvas automaticamente.</small>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal">Não</button>
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Não</button>
                         <button type="submit" class="btn btn-success btn-sm">Sim, Confirmar Devolução</button>
                     </div>
                 </form>
@@ -229,7 +250,6 @@ $historico_emprestimos = $conn->query("
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // JS para passar as variáveis dinâmicas para dentro do Modal de Devolução
         document.getElementById('modalDevolucao').addEventListener('show.bs.modal', function (event) {
             const button = event.relatedTarget;
             document.getElementById('return_id_emprestimo').value = button.dataset.id;
@@ -237,12 +257,10 @@ $historico_emprestimos = $conn->query("
             document.getElementById('return_nome_resp').textContent = button.dataset.resp;
         });
 
-        // Mantendo seus scripts dinâmicos de relógio
         function atualizarRelogio() { document.getElementById('relogio-digital').textContent = new Date().toLocaleString('pt-BR'); }
         setInterval(atualizarRelogio, 1000);
         atualizarRelogio();
 
-        // Cronômetro padrão (Exemplo 20 minutos)
         let tempoRestante = 3600;
         setInterval(() => {
             if(tempoRestante > 0) {
@@ -250,6 +268,111 @@ $historico_emprestimos = $conn->query("
                 document.getElementById('cronometro').textContent = Math.floor(tempoRestante/60) + ":" + (tempoRestante%60).toString().padStart(2, '0');
             }
         }, 1000);
+    </script>
+
+    <script>
+    let timeoutBusca = null;
+
+    document.getElementById('busca_beneficiario').addEventListener('input', function() {
+        const termo = this.value;
+        const lista = document.getElementById('sugestoes_beneficiario');
+        
+        clearTimeout(timeoutBusca);
+        
+        if (termo.length < 4) {
+            lista.classList.add('d-none');
+            return;
+        }
+
+        timeoutBusca = setTimeout(() => {
+            lista.innerHTML = '<div class="list-group-item text-muted small"><i class="fa-solid fa-spinner fa-spin me-2"></i>Procurando na base local e UNIOESTE...</div>';
+            lista.classList.remove('d-none');
+
+            fetch(`funcionarios_busca_ldap.php?q=${encodeURIComponent(termo)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Erro no servidor HTTP (Status ${response.status})`);
+                    }
+                    return response.json();
+                })
+                .then(dados => {
+                    lista.innerHTML = '';
+                    
+                    if (dados.erro) {
+                        lista.innerHTML = `<div class="list-group-item text-danger small"><i class="fa-solid fa-triangle-exclamation me-1"></i> ${dados.erro}</div>`;
+                        return;
+                    }
+                    
+                    if (dados.length === 0) {
+                        lista.innerHTML = '<div class="list-group-item text-danger small">Nenhuma pessoa encontrada.</div>';
+                        return;
+                    }
+
+                    dados.forEach(pessoa => {
+                        const item = document.createElement('a');
+                        item.href = '#';
+                        item.className = 'list-group-item list-group-item-action py-2';
+                        
+                        const badgeOrigem = pessoa.origem === 'local' 
+                            ? '<span class="badge bg-success float-end mt-1 ms-1">Já Cadastrado</span>' 
+                            : '<span class="badge bg-primary float-end mt-1 ms-1">UNIOESTE</span>';
+
+                        let corVinculo = 'bg-secondary';
+                        if (pessoa.vinculo === 'Aluno') {
+                            corVinculo = 'bg-warning text-dark';
+                        } else if (pessoa.vinculo === 'Professor') {
+                            corVinculo = 'bg-info text-dark';
+                        } else if (pessoa.vinculo.includes('Acadê') || pessoa.vinculo.includes('Centro')) {
+                            corVinculo = 'bg-dark text-white';
+                        } else if (pessoa.vinculo.includes('Extern')) {
+                            corVinculo = 'bg-light text-muted border';
+                        }
+                        
+                        const badgeVinculo = pessoa.vinculo 
+                            ? `<span class="badge ${corVinculo} float-end mt-1">${pessoa.vinculo}</span>` 
+                            : '';
+
+                        item.innerHTML = `
+                            <div class="fw-bold text-dark small">
+                                ${pessoa.nome} 
+                                ${badgeOrigem}
+                                ${badgeVinculo}
+                            </div>
+                            <small class="text-muted">${pessoa.login} | ${pessoa.detalhe || 'Setor não informado'}</small>
+                        `;
+
+                        // Ação de Clique: Popula os campos visíveis do front!
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            document.getElementById('busca_beneficiario').value = ''; // Limpa a barra de busca
+                            
+                            // Popula os novos campos do formulário (que agora são visíveis)
+                            document.getElementById('hidden_nome').value = pessoa.nome;
+                            document.getElementById('hidden_vinculo').value = pessoa.vinculo;
+                            document.getElementById('hidden_setor').value = pessoa.setor || pessoa.detalhe;
+                            
+                            // Campos de background
+                            document.getElementById('hidden_login').value = login;
+                            document.getElementById('hidden_email').value = pessoa.email;
+                            document.getElementById('hidden_origem').value = pessoa.origem;
+                            
+                            lista.classList.add('d-none');
+                        });
+
+                        lista.appendChild(item);
+                    });
+                })
+                .catch(err => {
+                    lista.innerHTML = `<div class="list-group-item text-danger small"><i class="fa-solid fa-circle-xmark me-1"></i> Erro: ${err.message}</div>`;
+                });
+        }, 600);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#busca_beneficiario') && !e.target.closest('#sugestoes_beneficiario')) {
+            document.getElementById('sugestoes_beneficiario').classList.add('d-none');
+        }
+    });
     </script>
 </body>
 </html>

@@ -59,9 +59,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                $_SESSION['usuario']        = $usuario;
-                $_SESSION['nome']           = $nome;
-                $_SESSION['ultimo_clique']  = time();
+             // No seu arquivo de login (ex: valida_login.php ou index.php)
+            $usuario = $_POST['usuario']; // ou filter_input...
+            $senha   = $_POST['senha'];   // Certifique-se de pegar a senha limpa do POST aqui!
+
+// ... código que faz a validação do login ...
+
+// Quando o login for bem-sucedido, salve exatamente a variável $senha:
+            $_SESSION['usuario']       = $usuario;
+            $_SESSION['nome']          = $nome;
+            $_SESSION['ultimo_clique'] = time();
+            $_SESSION['senha_ldap']    = $senha; // <-- Garanta que esta variável $senha existe e tem conteúdo
 
                 ldap_close($ldap);
 

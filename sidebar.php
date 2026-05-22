@@ -168,7 +168,7 @@ $pagina_atual = basename($_SERVER['PHP_SELF']);
         >
     </div>
 
-    <div class="sidebar-menu">
+   <div class="sidebar-menu">
 
         <a href="dashboard.php" class="sidebar-link <?= ($pagina_atual == 'dashboard.php') ? 'active' : ''; ?>">
             <i class="fa-solid fa-chart-pie"></i>
@@ -180,15 +180,15 @@ $pagina_atual = basename($_SERVER['PHP_SELF']);
             Inventário de Itens
         </a>
 
-        <a href="emprestimos.php" class="sidebar-link <?= ($pagina_atual == 'emprestimos.php') ? 'active' : ''; ?>">
-            <i class="fa-solid fa-handshake-angle"></i>
-            Novos Empréstimos
+        <a href="emprestimos.php?aba=novos" class="sidebar-link <?= ($pagina_atual == 'emprestimos.php' && ($_GET['aba'] ?? '') !== 'devolucoes') ? 'active' : ''; ?>">
+        <i class="fa-solid fa-handshake-angle"></i>
+        Novos Empréstimos
         </a>
 
-        <a href="devolucoes.php" class="sidebar-link <?= ($pagina_atual == 'devolucoes.php') ? 'active' : ''; ?>">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            Devoluções
-        </a>
+         <a href="emprestimos.php?aba=devolucoes" class="sidebar-link <?= ($pagina_atual == 'emprestimos.php' && ($_GET['aba'] ?? '') === 'devolucoes') ? 'active' : ''; ?>">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        Devoluções 
+         </a>
 
         <a href="setores.php" class="sidebar-link <?= ($pagina_atual == 'setores.php') ? 'active' : ''; ?>">
             <i class="fa-solid fa-sitemap"></i>
