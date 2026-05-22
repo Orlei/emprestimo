@@ -582,7 +582,7 @@ $itens_inventario = $conn->query("
     
     <script>
         // 1. CRONÔMETRO DE SESSÃO
-        let tempoRestante = <?php echo isset($tempo_restante_inicial) ? (int)$tempo_restante_inicial : 1200; ?>;
+        let tempoRestante = <?php echo isset($tempo_restante_inicial) ? (int)$tempo_restante_inicial : 3600; ?>;
         const display = document.getElementById('cronometro');
 
         function atualizarCronometro() {

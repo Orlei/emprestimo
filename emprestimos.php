@@ -18,6 +18,20 @@ if (isset($_SESSION['msg_sucesso'])) {
     $mensagem = $_SESSION['msg_sucesso'];
     unset($_SESSION['msg_sucesso']);
 }
+    // Tradução da data e hora para o padrão brasileiro.
+     function dataEmPortugues($data) {
+    if (!$data) return '<span class="text-muted small">Pendente</span>';
+    
+    // Converte a data do banco para o formato padrão do PHP
+    $data_formatada = date('d/M/Y H:i', strtotime($data));
+    
+    // Lista de tradução dos meses abreviados
+    $meses_en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    $meses_pt = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Substitui o mês em inglês pelo mês em português
+    return str_replace($meses_en, $meses_pt, $data_formatada);
+}
 
 // 3. Processamento dos Formulários (PRG Pattern)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
@@ -106,7 +120,7 @@ $historico_emprestimos = $conn->query("
                         <p class="text-muted m-0 small">Controle de saídas, destinos e devoluções de equipamentos.</p>
                     </div>
                     <div>
-                        <button class="btn btn-primary btn-sm" style="background-color: var(--unioeste-blue); border: none;" data-bs-toggle="modal" data-bs-target="#modalNovoEmprestimo"><i class="fa-solid fa-plus me-1"></i>+ Registrar Empréstimo</button>
+                        <button class="btn btn-primary btn-sm" style="background-color: var(--unioeste-blue); border: none;" data-bs-toggle="modal" data-bs-target="#modalNovoEmprestimo"><i class="fa-solid fa-plus me-1"></i>Novo Empréstimo</button>
                     </div>
                 </div>
                 
@@ -128,10 +142,8 @@ $historico_emprestimos = $conn->query("
                                 <td class="fw-semibold text-dark"><?= htmlspecialchars($row['nome_item']) ?></td>
                                 <td><?= htmlspecialchars($row['nome_responsavel']) ?></td>
                                 <td><?= htmlspecialchars($row['setor_responsavel']) ?></td>
-                                <td><?= date('d/M/Y H:i', strtotime($row['data_emprestimo'])) ?></td>
-                                <td>
-                                    <?= $row['data_devolucao'] ? date('d/M/Y H:i', strtotime($row['data_devolucao'])) : '<span class="text-muted small">Pendente</span>' ?>
-                                </td>
+                                <td><?= dataEmPortugues($row['data_emprestimo']) ?></td>
+                                <td><?= dataEmPortugues($row['data_devolucao']) ?></td>
                                 <td>
                                     <?php if ($row['status'] === 'Ativo'): ?>
                                         <span class="badge-active">Em Uso</span>
@@ -231,7 +243,7 @@ $historico_emprestimos = $conn->query("
         atualizarRelogio();
 
         // Cronômetro padrão (Exemplo 20 minutos)
-        let tempoRestante = 1200;
+        let tempoRestante = 3600;
         setInterval(() => {
             if(tempoRestante > 0) {
                 tempoRestante--;

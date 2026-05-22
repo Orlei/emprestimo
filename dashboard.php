@@ -5,12 +5,51 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// --- CONEXÃO COM O BANCO DE DADOS (Adicionado para resolver o erro) ---
+$host = "127.0.0.1";
+$user = "root";
+$pass = "7!5JJTBpIoZb.5t!";
+$db   = "atp";
+
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+    die("Falha na conexão com o banco: " . $conn->connect_error);
+}
+
 $usuario = $_SESSION['usuario'] ?? 'Operador';
 $nome_completo = $_SESSION['nome'] ?? 'Usuário';
 
 $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ultimo_clique']) 
     ? $_SESSION['tempo_limite_total'] - (time() - $_SESSION['ultimo_clique']) 
     : 1800;
+
+// Busca as últimas 3 movimentações para o painel
+$ultimas_movimentacoes = $conn->query("
+    SELECT e.*, i.nome_item 
+    FROM emprestimos e 
+    INNER JOIN itens i ON e.id_item = i.id 
+    ORDER BY e.data_emprestimo DESC 
+    LIMIT 3
+");
+
+function formatarDataAmigavel($data_string) {
+    $timestamp = strtotime($data_string);
+    $data_base = date('Y-m-d', $timestamp);
+    $hoje = date('Y-m-d');
+    $ontem = date('Y-m-d', strtotime('-1 day'));
+    
+    $hora = date('H:i', $timestamp);
+    
+    if ($data_base === $hoje) {
+        return "Hoje, " . $hora;
+    } elseif ($data_base === $ontem) {
+        return "Ontem, " . $hora;
+    } else {
+        // Se for mais antigo, exibe a data formatada normal em PT-BR
+        $meses = ['01'=>'Jan', '02'=>'Fev', '03'=>'Mar', '04'=>'Abr', '05'=>'Mai', '06'=>'Jun', '07'=>'Jul', '08'=>'Ago', '09'=>'Set', '10'=>'Out', '11'=>'Nov', '12'=>'Dez'];
+        return date('d', $timestamp) . '/' . $meses[date('m', $timestamp)] . ', ' . $hora;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -73,7 +112,6 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
             flex-direction: column;
             min-height: 100vh;
             width: calc(100% - var(--sidebar-width));
-            /* CORREÇÃO: transição suave para quando a sidebar colapsar */
             transition: margin-left 0.3s ease, width 0.3s ease;
         }
 
@@ -87,7 +125,6 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid #e5e7eb;
-            /* CORREÇÃO: permite wrap quando a tela for estreita */
             flex-wrap: wrap;
             gap: 10px;
         }
@@ -98,7 +135,6 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
             gap: 12px;
         }
 
-        /* Botão hambúrguer — visível só em mobile (aguarda sidebar.php) */
         .btn-sidebar-toggle {
             display: none;
             background: none;
@@ -180,42 +216,18 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
 
         @keyframes piscar { 50% { opacity: 0.5; } }
 
-        /* =============================================
-           RESPONSIVIDADE
-           ============================================= */
-
-        /* Tablet (até 991px) */
+        /* RESPONSIVIDADE */
         @media (max-width: 991.98px) {
-            .content-body {
-                padding: 20px;
-            }
-            footer {
-                padding: 14px 20px;
-            }
+            .content-body { padding: 20px; }
+            footer { padding: 14px 20px; }
         }
 
-        /* Mobile (até 768px): colapsa a sidebar */
         @media (max-width: 768px) {
-            .main-wrapper {
-                /* CORREÇÃO PRINCIPAL: remove o margin da sidebar em mobile */
-                margin-left: 0;
-                width: 100%;
-            }
-            .btn-sidebar-toggle {
-                display: flex;
-                align-items: center;
-            }
-            .content-body {
-                padding: 16px;
-            }
-            footer {
-                padding: 12px 16px;
-            }
-            /* CORREÇÃO: oculta nome completo do usuário em telas pequenas para não quebrar o topbar */
-            .topbar-nome-completo {
-                display: none;
-            }
-            /* CORREÇÃO: reduz tamanho dos botões de operação */
+            .main-wrapper { margin-left: 0; width: 100%; }
+            .btn-sidebar-toggle { display: flex; align-items: center; }
+            .content-body { padding: 16px; }
+            footer { padding: 12px 16px; }
+            .topbar-nome-completo { display: none; }
             .btn-operacao {
                 font-size: 0.9rem;
                 padding-top: 0.65rem !important;
@@ -223,27 +235,12 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
             }
         }
 
-        /* Mobile pequeno (até 480px) */
         @media (max-width: 480px) {
-            .topbar {
-                padding: 10px 14px;
-            }
-            .topbar h5 {
-                font-size: 0.95rem;
-            }
-            /* CORREÇÃO: tabela com padding menor para dar mais espaço às colunas */
-            .table th, .table td {
-                padding: 10px 8px;
-                font-size: 0.82rem;
-            }
-            /* CORREÇÃO: oculta coluna "Setor/Destino" em telas muito pequenas */
-            .table th:nth-child(3),
-            .table td:nth-child(3) {
-                display: none;
-            }
-            footer .footer-suporte {
-                display: none;
-            }
+            .topbar { padding: 10px 14px; }
+            .topbar h5 { font-size: 0.95rem; }
+            .table th, .table td { padding: 10px 8px; font-size: 0.82rem; }
+            .table th:nth-child(3), .table td:nth-child(3) { display: none; }
+            footer .footer-suporte { display: none; }
         }
     </style>
 </head>
@@ -255,7 +252,6 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
 
         <header class="topbar">
             <div class="topbar-left">
-                <!-- Botão hambúrguer: ativará o toggle da sidebar quando sidebar.php for integrada -->
                 <button class="btn-sidebar-toggle" id="btnSidebarToggle" aria-label="Abrir menu">
                     <i class="fa-solid fa-bars"></i>
                 </button>
@@ -264,7 +260,6 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
 
             <div class="topbar-actions">
                 <div class="text-end">
-                    <!-- CORREÇÃO: nome completo oculto em mobile via classe -->
                     <span class="fw-bold text-dark d-block topbar-nome-completo" style="font-size: 0.9rem;">
                         <i class="fa-regular fa-user me-1 text-muted"></i> <?= htmlspecialchars($nome_completo) ?> (<?= htmlspecialchars($usuario) ?>)
                     </span>
@@ -307,7 +302,6 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
                     </div>
 
                     <div class="mb-4">
-                        <h5 class="fw-bold text-dark mb-3">Operações Diárias</h5>
                         <div class="row g-3">
                             <div class="col-sm-6">
                                 <a href="emprestimos.php" class="btn btn-primary btn-operacao w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm" style="background-color: var(--unioeste-blue); border: none; border-radius: 10px; font-size: 1.05rem;">
@@ -315,8 +309,8 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
                                 </a>
                             </div>
                             <div class="col-sm-6">
-                               <a href="devolucoes.php" class="btn btn-operacao w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm botao-devolucao" style="border-radius: 10px; font-size: 1.05rem;">
-                                <i class="fa-solid fa-arrow-rotate-left"></i> Dar Baixa em Devolução
+                               <a href="emprestimos.php" class="btn btn-operacao w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm botao-devolucao" style="border-radius: 10px; font-size: 1.05rem;">
+                                    <i class="fa-solid fa-arrow-rotate-left"></i> Dar Baixa em Devolução
                                 </a>
                             </div>
                         </div>
@@ -332,46 +326,46 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle m-0">
-                                <thead class="table-light" style="font-size: 0.85rem; color: var(--text-muted);">
+                            <table class="table table-hover align-middle">
+                                <thead>
                                     <tr>
                                         <th>Equipamento</th>
                                         <th>Retirado por</th>
-                                        <!-- CORREÇÃO: coluna Setor oculta em mobile pequeno via CSS -->
-                                        <th class="d-none d-sm-table-cell">Setor/Destino</th>
-                                        <th class="d-none d-md-table-cell">Data de Saída</th>
-                                        <th class="text-center">Status</th>
+                                        <th>Setor/Destino</th>
+                                        <th>Data de Saída</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
-                                <tbody style="font-size: 0.9rem;">
-                                    <tr>
-                                        <td><span class="fw-semibold">Notebook Dell Latitude</span> <small class="text-muted d-block">Pat: 45892</small></td>
-                                        <td>Prof. Alexandre</td>
-                                        <td class="d-none d-sm-table-cell">Lab. Informática 2</td>
-                                        <td class="d-none d-md-table-cell">Hoje, 10:15</td>
-                                        <td class="text-center"><span class="badge bg-danger-subtle text-danger px-2 py-1 fw-bold">Pendente</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><span class="fw-semibold">Projetor Epson PowerLite</span> <small class="text-muted d-block">Pat: 12455</small></td>
-                                        <td>Téc. Maria Silva</td>
-                                        <td class="d-none d-sm-table-cell">Bloco B - Sala 102</td>
-                                        <td class="d-none d-md-table-cell">Ontem, 14:30</td>
-                                        <td class="text-center"><span class="badge bg-success-subtle text-success px-2 py-1 fw-bold">Devolvido</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><span class="fw-semibold">Kit Adaptador HDMI/VGA</span> <small class="text-muted d-block">Sem patrimônio</small></td>
-                                        <td>Prof. Carlos</td>
-                                        <td class="d-none d-sm-table-cell">Anfiteatro Central</td>
-                                        <td class="d-none d-md-table-cell">20/05, 08:00</td>
-                                        <td class="text-center"><span class="badge bg-danger-subtle text-danger px-2 py-1 fw-bold">Pendente</span></td>
-                                    </tr>
+                                <tbody>
+                                    <?php if ($ultimas_movimentacoes && $ultimas_movimentacoes->num_rows > 0): ?>
+                                        <?php while($mov = $ultimas_movimentacoes->fetch_assoc()): ?>
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-bold text-dark"><?= htmlspecialchars($mov['nome_item']) ?></div>
+                                                    <small class="text-muted">ID do item: #<?= $mov['id_item'] ?></small>
+                                                </td>
+                                                <td><?= htmlspecialchars($mov['nome_responsavel']) ?></td>
+                                                <td><?= htmlspecialchars($mov['setor_responsavel']) ?></td>
+                                                <td><?= formatarDataAmigavel($mov['data_emprestimo']) ?></td>
+                                                <td>
+                                                    <?php if ($mov['status'] === 'Ativo'): ?>
+                                                        <span class="badge bg-danger-subtle text-danger px-2 py-1 rounded small">Pendente</span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-success-subtle text-success px-2 py-1 rounded small">Devolvido</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                        <?php endwhile; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-3">Nenhum empréstimo registrado até o momento.</td>
+                                        </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                </div>
-
-                <div class="col-xl-4">
+                </div> <div class="col-xl-4">
                     <div class="mural-container">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h6 class="fw-bold m-0" style="color: var(--unioeste-blue); font-size: 1rem;">Mural Corporativo</h6>
@@ -400,7 +394,6 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
         <footer>
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <span>DIV-INF-MCR &copy; 2026</span>
-                <!-- CORREÇÃO: suporte oculto em telas muito pequenas -->
                 <span class="text-dark footer-suporte"><i class="fa-brands fa-whatsapp text-success me-1 fs-6 align-middle"></i> Suporte local: <strong>(45) 3284-7824</strong></span>
             </div>
         </footer>
@@ -447,13 +440,11 @@ $tempo_restante_inicial = isset($_SESSION['tempo_limite_total'], $_SESSION['ulti
         setInterval(atualizarRelogio, 1000);
         atualizarRelogio();
 
-        // 3. BOTÃO HAMBÚRGUER (preparado para integração com sidebar.php)
-        // Quando a sidebar.php for enviada, adicionar aqui o toggle da classe 'sidebar-open'
+        // 3. BOTÃO HAMBÚRGUER
         const btnToggle = document.getElementById('btnSidebarToggle');
         if (btnToggle) {
             btnToggle.addEventListener('click', function () {
-                // Placeholder: document.querySelector('.sidebar').classList.toggle('sidebar-open');
-                // document.querySelector('.main-wrapper').classList.toggle('sidebar-open');
+                // Integração com a classe da sidebar futura
             });
         }
     </script>
