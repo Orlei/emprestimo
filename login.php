@@ -7,11 +7,11 @@ session_start();
  |-------------------------------------------------------------
  */
 
-$ldap_host = "10.88.201.2"; 
-$ldap_port = 389; 
+$ldap_host = "10.88.201.2";
+$ldap_port = 389;
 $base_dn   = "DC=unioeste,DC=br";
 $domain    = "@unioeste.br";
-$netbios   = "UNIOESTE\\"; 
+$netbios   = "UNIOESTE\\";
 
 $erro = "";
 
@@ -28,15 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($usuario) || empty($senha)) {
         $erro = "Preencha usuário e senha.";
     } else {
-        
-        $ldap = ldap_connect($ldap_host, $ldap_port);
+
+        // CORREÇÃO: ldap_connect() agora recebe a URI completa.
+        // Passar $port como segundo argumento foi depreciado no PHP 8.3.
+        $ldap_uri = "ldap://{$ldap_host}:{$ldap_port}";
+        $ldap = ldap_connect($ldap_uri);
 
         if ($ldap) {
             ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
             ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
 
             $ldap_user = (strpos($usuario, '@') === false) ? $usuario . $domain : $usuario;
-            
+
             $bind = @ldap_bind($ldap, $ldap_user, $senha);
 
             if (!$bind && strpos($usuario, '@') === false) {
@@ -47,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $usuario_escaped = ldap_escape($usuario, "", LDAP_ESCAPE_FILTER);
                 $filter = "(|(sAMAccountName=$usuario_escaped)(userPrincipalName=$usuario_escaped$domain))";
                 $search = @ldap_search($ldap, $base_dn, $filter);
-                
+
                 $nome = $usuario;
                 if ($search) {
                     $entries = ldap_get_entries($ldap, $search);
@@ -56,30 +59,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                $_SESSION['usuario'] = $usuario;
-                $_SESSION['nome']    = $nome;
-                $_SESSION['ultimo_clique'] = time(); 
+                $_SESSION['usuario']        = $usuario;
+                $_SESSION['nome']           = $nome;
+                $_SESSION['ultimo_clique']  = time();
+
+                ldap_close($ldap);
 
                 header("Location: dashboard.php");
                 exit;
 
             } else {
                 ldap_get_option($ldap, LDAP_OPT_DIAGNOSTIC_MESSAGE, $extended_error);
-                
+
                 if (!empty($extended_error)) {
                     if (strpos($extended_error, 'data 52e') !== false) {
                         $erro = "Usuário ou senha incorretos.";
-                    } else if (strpos($extended_error, 'data 533') !== false) {
+                    } elseif (strpos($extended_error, 'data 533') !== false) {
                         $erro = "Esta conta institucional está bloqueada ou desativada.";
                     } else {
-                        $erro = "Erro na autenticação institucional. Detalhes: " . $extended_error;
+                        $erro = "Erro na autenticação institucional.";
                     }
                 } else {
                     $erro = "Usuário/Senha incorretos ou o servidor AD está inacessível.";
                 }
+
+                ldap_close($ldap);
             }
 
-            ldap_close($ldap);
         } else {
             $erro = "Não foi possível conectar ao servidor de autenticação.";
         }
@@ -94,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Empréstimos - UNIOESTE</title>
 
-    <link rel="icon" type="image/png" href="logo256_unioeste.png">
+    <link rel="icon" type="image/png" href="img/logo256_unioeste.png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -110,7 +116,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             min-height: 100vh;
             background-color: #ffffff;
             font-family: 'Segoe UI', Roboto, sans-serif;
-            /* CORREÇÃO: era overflow: hidden — bloqueava o scroll quando o teclado virtual abria em mobile */
             overflow-x: hidden;
         }
 
@@ -211,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .login-sidebar {
             flex: 1;
             position: relative;
-            background-image: url('fundo-unioeste.png');
+            background-image: url('img/fundo-unioeste.png');
             background-size: cover;
             background-position: center center;
             background-repeat: no-repeat;
@@ -228,8 +233,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             position: absolute;
             inset: 0;
             background: linear-gradient(
-                180deg, 
-                rgba(11, 34, 101, 0.2) 0%, 
+                180deg,
+                rgba(11, 34, 101, 0.2) 0%,
                 rgba(5, 15, 45, 0.65) 100%
             );
             z-index: -1;
@@ -305,8 +310,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="login-container">
 
     <div class="login-form-area">
-        
-        <img class="logo-unioeste" src="logo_unioeste.png" alt="Logo UNIOESTE">
+
+        <img class="logo-unioeste" src="img/logo_unioeste.png" alt="Logo UNIOESTE">
 
         <h2 class="login-header-title">Acesse o Painel</h2>
         <p class="login-header-subtitle">Utilize suas credenciais institucionais para entrar</p>

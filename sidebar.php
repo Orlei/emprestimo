@@ -162,7 +162,7 @@ $pagina_atual = basename($_SERVER['PHP_SELF']);
 
     <div class="sidebar-brand">
         <img 
-            src="logo_unioeste.png" 
+            src="img/logo_unioeste.png" 
             alt="Logo UNIOESTE"
             style="filter: brightness(0) invert(1);"
         >
