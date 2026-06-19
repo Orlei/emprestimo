@@ -177,18 +177,13 @@ $pagina_atual = basename($_SERVER['PHP_SELF']);
 
         <a href="itens.php" class="sidebar-link <?= ($pagina_atual == 'itens.php') ? 'active' : ''; ?>">
             <i class="fa-solid fa-layer-group"></i>
-            Inventário de Itens
+            Inventário
         </a>
 
         <a href="emprestimos.php?aba=novos" class="sidebar-link <?= ($pagina_atual == 'emprestimos.php' && ($_GET['aba'] ?? '') !== 'devolucoes') ? 'active' : ''; ?>">
         <i class="fa-solid fa-handshake-angle"></i>
-        Novos Empréstimos
+        Empréstimos
         </a>
-
-         <a href="emprestimos.php?aba=devolucoes" class="sidebar-link <?= ($pagina_atual == 'emprestimos.php' && ($_GET['aba'] ?? '') === 'devolucoes') ? 'active' : ''; ?>">
-        <i class="fa-solid fa-clock-rotate-left"></i>
-        Devoluções 
-         </a>
 
         <a href="setores.php" class="sidebar-link <?= ($pagina_atual == 'setores.php') ? 'active' : ''; ?>">
             <i class="fa-solid fa-sitemap"></i>
