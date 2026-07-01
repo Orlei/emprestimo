@@ -2,7 +2,7 @@
 $host   = "127.0.0.1";
 $banco  = "atp";
 $usuario = "root";
-$senha  = "7!5JJTBpIoZb.5t!";
+$senha  = "";
 
 try {
     $dsn = "mysql:host=$host;dbname=$banco;charset=utf8mb4";
