@@ -1,7 +1,7 @@
 <?php
-$host   = "127.0.0.1";
+$host   = ";
 $banco  = "atp";
-$usuario = "root";
+$usuario = "";
 $senha  = "";
 
 try {
